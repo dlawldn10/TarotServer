@@ -1,7 +1,5 @@
 // Socket.IO 궁합 방 관리
-// 방 구조: { roomId, users: [{ socketId, nickname }], cards: { nickname: [cardNum, ...] } }
-
-const rooms = new Map();
+const rooms = require("../store/rooms");
 
 function setup(io) {
   io.on("connection", (socket) => {
@@ -14,28 +12,36 @@ function setup(io) {
       console.log(`방 생성: ${roomId}`);
     });
 
-    socket.on("join", ({ nickname, roomId }) => {
+    // gender: 0 = 여성, 1 = 남성 (앱의 WOMAN/MAN 상수와 동일)
+    socket.on("join", ({ nickname, roomId, gender }) => {
       const room = rooms.get(roomId);
       if (!room) {
         socket.emit("error", { message: "존재하지 않는 방입니다." });
         return;
       }
 
-      const alreadyJoined = room.users.some(u => u.nickname === nickname);
+      const alreadyJoined = room.users.some(u => u.socketId === socket.id);
       if (!alreadyJoined) {
-        room.users.push({ socketId: socket.id, nickname });
+        room.users.push({
+          socketId: socket.id,
+          nickname,
+          gender: gender === 0 || gender === 1 ? gender : null,
+        });
         room.cards[nickname] = [];
       }
 
       socket.join(roomId);
-      const nicknames = room.users.map(u => u.nickname);
-      io.to(roomId).emit("joinComplete", { nickname: nicknames });
       console.log(`입장: ${nickname} → 방 ${roomId}`);
+
+      // 앱은 첫 joinComplete에서 상대 닉네임을 읽으므로 두 명이 모였을 때만 보낸다
+      if (room.users.length === 2) {
+        io.to(roomId).emit("joinComplete", { nickname: room.users.map(u => u.nickname) });
+      }
     });
 
-    socket.on("start", ({ nickname, roomId }) => {
-      // 카드 선택 시작 신호 — 양쪽 모두에게 알림
-      io.to(roomId).emit("next", {});
+    socket.on("start", ({ roomId }) => {
+      // 앱은 next를 "상대방이 진행했다"로 해석하므로 보낸 사람에게는 돌려주지 않는다
+      socket.to(roomId).emit("next", {});
       console.log(`시작: 방 ${roomId}`);
     });
 

@@ -29,6 +29,7 @@ app.get("/.well-known/assetlinks.json", (_, res) => {
   res.sendFile(path.join(__dirname, "well-known/assetlinks.json"));
 });
 
+app.set("io", io);
 harmonySocket.setup(io);
 
 const PORT = process.env.PORT ?? 3000;
