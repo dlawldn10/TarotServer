@@ -127,8 +127,15 @@ const TOPIC_QUESTIONS = {
   today: [],
 };
 
+// 앱은 카드 번호 n(0~21)을 이미지 tarot_{n+1}.png로 그린다. 이미지 1~21번은 메이저 아르카나
+// I~XXI이고 22번이 바보(0)라서, 앱 번호 n이 가리키는 카드는 아르카나 (n+1) % 22 이다.
+// 이 변환 없이 TAROT_CARDS[n]을 쓰면 화면의 카드와 해석이 한 장씩 어긋난다.
+const MAJOR_ARCANA_COUNT = 22;
+
 function getCard(cardNumber) {
-  return TAROT_CARDS[cardNumber] ?? { name: `카드 ${cardNumber}`, meaning: "알 수 없음" };
+  const isAppCardNumber = Number.isInteger(cardNumber) && cardNumber >= 0 && cardNumber < MAJOR_ARCANA_COUNT;
+  const index = isAppCardNumber ? (cardNumber + 1) % MAJOR_ARCANA_COUNT : cardNumber;
+  return TAROT_CARDS[index] ?? { name: `카드 ${cardNumber}`, meaning: "알 수 없음" };
 }
 
 module.exports = { TAROT_CARDS, TOPIC_NAMES, TOPIC_IDS, TOPIC_QUESTIONS, getCard };
