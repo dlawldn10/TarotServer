@@ -3,6 +3,21 @@ const { getCard, TOPIC_NAMES, TOPIC_QUESTIONS } = require("../data/cards");
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// 모델이 JSON을 ```json 코드블록으로 감싸거나 앞뒤에 문장을 붙여도 읽을 수 있게,
+// 응답 텍스트에서 가장 바깥 { ... } 구간만 잘라 파싱한다.
+function parseReading(response) {
+  if (response.stop_reason === "max_tokens") {
+    throw new Error("리딩 응답이 max_tokens에서 잘림");
+  }
+  const text = response.content.find((block) => block.type === "text")?.text ?? "";
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end <= start) {
+    throw new Error(`리딩 응답에 JSON이 없음: ${text.slice(0, 80)}`);
+  }
+  return JSON.parse(text.slice(start, end + 1));
+}
+
 const singleFormat = (descriptionHint, fullHint) => `반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
 
 {
@@ -82,7 +97,7 @@ ${cardText}
     messages: [{ role: "user", content: userMessage }],
   });
 
-  return JSON.parse(response.content[0].text);
+  return parseReading(response);
 }
 
 const MATCH_SYSTEM_PROMPT = `당신은 타로카드 전문 리더입니다. 한국어로 답변하세요.
@@ -167,11 +182,11 @@ ${formatCards(cards.slice(3, 6))}`;
     messages: [{ role: "user", content: userMessage }],
   });
 
-  const reading = JSON.parse(response.content[0].text);
+  const reading = parseReading(response);
   if (!Array.isArray(reading.cardResults) || reading.cardResults.length !== 6) {
     throw new Error(`궁합 리딩 cardResults가 6개가 아님: ${reading.cardResults?.length}`);
   }
   return reading;
 }
 
-module.exports = { readTarot, readMatchTarot };
+module.exports = { readTarot, readMatchTarot, parseReading };
