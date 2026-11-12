@@ -11,6 +11,16 @@ const TOPIC_EMOJIS = {
   0: "💜", 1: "📚", 2: "🌙", 3: "💼", 4: "🔮", 5: "✨",
 };
 
+const PACKAGE_NAME = "com.fourleafclover.tarot";
+const STORE_URL = `https://play.google.com/store/apps/details?id=${PACKAGE_NAME}`;
+
+// 닉네임과 리딩 본문은 사용자·모델이 만든 문자열이라 HTML에 넣기 전에 이스케이프한다
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]
+  ));
+}
+
 function cardImageUrl(cardNumber, baseUrl) {
   const idx = cardNumber + 1;
   const filename = idx <= 22 ? `tarot_${idx}.png` : "tarot_front.png";
@@ -20,19 +30,23 @@ function cardImageUrl(cardNumber, baseUrl) {
 function renderPage(result, baseUrl) {
   const topic = TOPIC_LABELS[result.tarotType] ?? "타로";
   const emoji = TOPIC_EMOJIS[result.tarotType] ?? "🔮";
-  const summary = result.overallResult?.summary ?? "";
-  const full = result.overallResult?.full ?? "";
+  const summary = esc(result.overallResult?.summary);
+  const full = esc(result.overallResult?.full);
+  const firstUser = esc(result.overallResult?.firstUser ?? "첫번째");
+  const secondUser = esc(result.overallResult?.secondUser ?? "두번째");
+  const tarotId = encodeURIComponent(result.tarotId);
+  const createdAt = esc(result.createdAt);
   const cards = result.cards ?? [];
   const cardResults = result.cardResults ?? [];
   const isHarmony = result.tarotType === 5;
 
   const cardSections = cards.map((cardNum, i) => {
     const info = cardResults[i];
-    const keywords = info?.keywords?.join("  ·  ") ?? "";
-    const desc = info?.description ?? "";
+    const keywords = esc(info?.keywords?.join("  ·  "));
+    const desc = esc(info?.description);
     const imgUrl = cardImageUrl(cardNum, baseUrl);
     const label = isHarmony
-      ? (i < 3 ? `${result.overallResult?.firstUser ?? "첫번째"} ${i + 1}번째 카드` : `${result.overallResult?.secondUser ?? "두번째"} ${i - 2}번째 카드`)
+      ? (i < 3 ? `${firstUser} ${i + 1}번째 카드` : `${secondUser} ${i - 2}번째 카드`)
       : `${i + 1}번째 카드`;
 
     return `
@@ -47,7 +61,7 @@ function renderPage(result, baseUrl) {
   }).join("");
 
   const harmonyUsers = isHarmony && result.overallResult?.firstUser
-    ? `<p class="harmony-users">${result.overallResult.firstUser} &amp; ${result.overallResult.secondUser}</p>`
+    ? `<p class="harmony-users">${firstUser} &amp; ${secondUser}</p>`
     : "";
 
   return `<!DOCTYPE html>
@@ -59,7 +73,7 @@ function renderPage(result, baseUrl) {
   <meta property="og:title" content="${emoji} ${topic} 타로 결과">
   <meta property="og:description" content="${summary}">
   <meta property="og:image" content="${cardImageUrl(cards[0] ?? 0, baseUrl)}">
-  <meta property="og:url" content="${baseUrl}/share?tarotId=${result.tarotId}">
+  <meta property="og:url" content="${baseUrl}/share?tarotId=${tarotId}">
   <meta property="og:type" content="website">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -134,7 +148,7 @@ function renderPage(result, baseUrl) {
     <div class="header">
       <div class="emoji">${emoji}</div>
       <div class="topic">${topic.toUpperCase()}</div>
-      <div class="date">${result.createdAt ?? ""}</div>
+      <div class="date">${createdAt}</div>
     </div>
 
     ${harmonyUsers}
@@ -151,7 +165,7 @@ function renderPage(result, baseUrl) {
     </div>
 
     <div class="cta">
-      <a href="https://play.google.com/store/apps/details?id=com.fourleafclover.tarot">
+      <a href="${STORE_URL}">
         앱에서 나만의 타로 보기
       </a>
       <p>TarotForU — AI 타로 리딩</p>
@@ -161,12 +175,65 @@ function renderPage(result, baseUrl) {
 </html>`;
 }
 
-// GET /share?tarotId=XXX
+// 궁합 초대 링크가 브라우저로 열렸을 때 보여 주는 페이지.
+// App Links가 검증된 기기에서는 링크가 앱으로 바로 열려 이 페이지를 거치지 않지만,
+// 카카오톡 같은 인앱 브라우저는 그대로 웹을 띄우므로 intent 링크로 앱을 열어 준다.
+function renderInvitePage(roomId, host) {
+  const fallback = encodeURIComponent(STORE_URL);
+  const openInApp = `intent://${host}/share?roomId=${roomId}#Intent;scheme=https;package=${PACKAGE_NAME};S.browser_fallback_url=${fallback};end`;
+
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✨ 궁합 타로 초대 | TarotForU</title>
+  <meta property="og:title" content="✨ 궁합 타로 초대가 도착했어요">
+  <meta property="og:description" content="링크를 눌러 함께 궁합 타로를 확인해 보세요.">
+  <meta property="og:type" content="website">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+      background: #0f0a1e; color: #e8e0f0; min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .container { max-width: 480px; padding: 32px 24px; text-align: center; }
+    .emoji { font-size: 44px; }
+    h1 { font-size: 20px; margin: 16px 0 10px; }
+    p { font-size: 14px; color: #a090c0; line-height: 1.7; }
+    .btn {
+      display: block; margin-top: 28px; padding: 15px 24px; border-radius: 24px;
+      background: linear-gradient(135deg, #7c4dba, #5b2d9e);
+      color: white; text-decoration: none; font-size: 15px; font-weight: 600;
+    }
+    .sub { display: inline-block; margin-top: 16px; font-size: 13px; color: #9b7fc7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">✨</div>
+    <h1>궁합 타로 초대가 도착했어요</h1>
+    <p>아래 버튼을 누르면 앱에서 초대방으로 바로 들어가요.<br>초대방은 1시간 동안만 열려 있어요.</p>
+    <a class="btn" href="${openInApp}">앱에서 초대방 열기</a>
+    <a class="sub" href="${STORE_URL}">앱이 없다면 설치하기</a>
+  </div>
+</body>
+</html>`;
+}
+
+// GET /share?tarotId=XXX  — 공유된 타로 결과
+// GET /share?roomId=XXX   — 궁합 초대
 router.get("/", (req, res) => {
-  const { tarotId } = req.query;
+  const { tarotId, roomId } = req.query;
+
+  if (typeof roomId === "string" && /^[A-Za-z0-9]{1,32}$/.test(roomId)) {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(renderInvitePage(roomId, req.get("host")));
+  }
 
   if (!tarotId) {
-    return res.status(400).send("tarotId가 필요합니다.");
+    return res.status(400).send("tarotId 또는 roomId가 필요합니다.");
   }
 
   const result = findById(tarotId);

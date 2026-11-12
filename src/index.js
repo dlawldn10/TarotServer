@@ -10,6 +10,8 @@ const shareRouter = require("./routes/share");
 const harmonySocket = require("./socket/harmony");
 
 const app = express();
+// Caddy(로컬 리버스 프록시)가 넘겨주는 X-Forwarded-Proto를 믿어야 req.protocol이 https가 된다
+app.set("trust proxy", "loopback");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: "*" },

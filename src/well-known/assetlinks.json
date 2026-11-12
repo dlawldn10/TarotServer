@@ -4,7 +4,8 @@
     "namespace": "android_app",
     "package_name": "com.fourleafclover.tarot",
     "sha256_cert_fingerprints": [
-      "REPLACE_WITH_RELEASE_KEYSTORE_SHA256"
+      "C6:71:CB:85:41:A8:BF:23:3D:B5:B5:E0:21:E0:A2:03:E0:DE:4D:C9:15:E4:22:A6:B8:B8:3F:29:7D:D1:F1:DE",
+      "CF:EA:15:77:78:BA:C4:5E:F6:2F:75:9E:BE:D2:A8:56:CD:C6:84:C5:86:BF:EB:82:79:26:F0:B0:41:A5:54:D8"
     ]
   }
 }]
