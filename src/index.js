@@ -6,6 +6,7 @@ const path = require("path");
 const { Server } = require("socket.io");
 const tarotRouter = require("./routes/tarot");
 const configRouter = require("./routes/config");
+const shareRouter = require("./routes/share");
 const harmonySocket = require("./socket/harmony");
 
 const app = express();
@@ -16,10 +17,12 @@ const io = new Server(server, {
 });
 
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 app.use("/tarot", tarotRouter);
 app.use("/config", configRouter);
+app.use("/share", shareRouter);
 
 // Android App Links verification
 app.get("/.well-known/assetlinks.json", (_, res) => {
