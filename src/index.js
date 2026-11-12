@@ -4,6 +4,7 @@ const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
 const tarotRouter = require("./routes/tarot");
+const configRouter = require("./routes/config");
 const harmonySocket = require("./socket/harmony");
 
 const app = express();
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.get("/health", (_, res) => res.json({ status: "ok" }));
 app.use("/tarot", tarotRouter);
+app.use("/config", configRouter);
 
 harmonySocket.setup(io);
 
