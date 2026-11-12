@@ -101,8 +101,34 @@ const TOPIC_IDS = {
   love: 0, study: 1, dream: 2, job: 3, today: 4,
 };
 
+// 앱이 사용자에게 묻는 질문 (앱의 constant/Topics.kt와 같은 문구·순서로 유지할 것)
+// 앱은 답변만 보내므로 서버가 질문을 알고 있어야 한다. today는 질문 입력이 없다.
+const TOPIC_QUESTIONS = {
+  love: [
+    "그 사람과의 첫만남은 어땠나요?",
+    "그 사람에 대한 현재 나의 감정은?",
+    "그 사람과 어떤 관계가 되고 싶나요?",
+  ],
+  study: [
+    "어떤 시험을 준비하고 있나요?",
+    "시험을 위해 어떤 노력을 하고 있나요?",
+    "시험에서 어떤 결과를 얻고 싶나요?",
+  ],
+  dream: [
+    "이루고 싶은 꿈이 무엇인가요?",
+    "그 꿈을 위해 어떤 노력을 하고 있나요?",
+    "꿈을 이루는데 있어 가장 장애물이 되는 것이 무엇인가요?",
+  ],
+  job: [
+    "어떤 직무 취업을 준비하고 있나요?",
+    "취업을 위해 어떤 노력을 하고 있나요?",
+    "취업 준비 중에 어떤 부분이 가장 어려운가요?",
+  ],
+  today: [],
+};
+
 function getCard(cardNumber) {
   return TAROT_CARDS[cardNumber] ?? { name: `카드 ${cardNumber}`, meaning: "알 수 없음" };
 }
 
-module.exports = { TAROT_CARDS, TOPIC_NAMES, TOPIC_IDS, getCard };
+module.exports = { TAROT_CARDS, TOPIC_NAMES, TOPIC_IDS, TOPIC_QUESTIONS, getCard };

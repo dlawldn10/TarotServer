@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const { readTarot, readMatchTarot } = require("../services/claude");
 const { save, findByIds } = require("../store/memory");
 const rooms = require("../store/rooms");
-const { TOPIC_IDS } = require("../data/cards");
+const { TOPIC_IDS, TOPIC_QUESTIONS } = require("../data/cards");
 
 const router = express.Router();
 
@@ -72,8 +72,14 @@ router.post("/:topic", async (req, res) => {
     return res.status(404).json({ error: "알 수 없는 주제입니다." });
   }
 
-  if (!firstAnswer || !secondAnswer || !thirdAnswer || !Array.isArray(cards) || cards.length !== 3) {
-    return res.status(400).json({ error: "firstAnswer, secondAnswer, thirdAnswer, cards(3개) 필요" });
+  if (!Array.isArray(cards) || cards.length !== 3) {
+    return res.status(400).json({ error: "cards(3개) 필요" });
+  }
+
+  // today처럼 질문이 없는 주제는 답변 없이 리딩한다
+  const needsAnswers = TOPIC_QUESTIONS[topic].length > 0;
+  if (needsAnswers && (!firstAnswer?.trim() || !secondAnswer?.trim() || !thirdAnswer?.trim())) {
+    return res.status(400).json({ error: "firstAnswer, secondAnswer, thirdAnswer 필요" });
   }
 
   try {
