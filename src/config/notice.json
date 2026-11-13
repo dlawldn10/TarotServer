@@ -1,0 +1,13 @@
+{
+  "maintenance": {
+    "enabled": false,
+    "title": "서비스 점검 중이에요",
+    "content": "더 나은 서비스를 위해 점검을 진행하고 있어요.\n잠시 후 다시 이용해 주세요."
+  },
+  "forceUpdate": {
+    "enabled": false,
+    "minVersionCode": 0,
+    "title": "업데이트가 필요해요",
+    "content": "원활한 이용을 위해\n최신 버전으로 업데이트해 주세요."
+  }
+}
